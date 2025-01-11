@@ -1,73 +1,114 @@
 import * as SQLite from "expo-sqlite";
 
-
-const db = SQLite.openDatabase("land_database.db");
-
 class LandRepository {
- 
+    db: Promise<SQLite.SQLiteDatabase>;
+  static deleteLand(id: number, arg1: () => void) {
+      throw new Error('Method not implemented.');
+  }
+  static addLand(name: string, size: string, soilType: string, arg3: () => void) {
+      throw new Error('Method not implemented.');
+  }
+  static getAllLands(arg0: (data: any) => void) {
+      throw new Error('Method not implemented.');
+  }
   static initialize() {
-    db.transaction((tx: { executeSql: (arg0: string) => void; }) => {
-      tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS lands (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT,
-          size TEXT,
-          soilType TEXT
-        )`
+      throw new Error('Method not implemented.');
+  }
+    ;
+
+  constructor() {
+    this.db = SQLite.openDatabase("land_database.db");
+  }
+
+  /**
+   * Veritabanını başlatır ve tabloyu oluşturur.
+   */
+  async initialize(): Promise<void> {
+    await (await this.db).execAsync(`
+      CREATE TABLE IF NOT EXISTS lands (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        size TEXT NOT NULL,
+        soilType TEXT NOT NULL
       );
-    });
+    `);
+    console.log("Database and table initialized");
   }
 
   /**
    * Tüm arazileri getirir.
-   * @param callback - Arazileri döndürmek için kullanılan callback.
+   * @returns - Araziler listesi
    */
-  static getAllLands(callback: (lands: any[]) => void) {
-    db.transaction((tx: { executeSql: (arg0: string, arg1: never[], arg2: (_: any, resultSet: any) => void) => void; }) => {
-      tx.executeSql(
-        `SELECT * FROM lands`,
-        [],
-        (_, resultSet) => {
-          const lands = [];
-          for (let i = 0; i < resultSet.rows.length; i++) {
-            lands.push(resultSet.rows.item(i));
-          }
-          callback(lands);
-        }
-      );
-    });
+  async getAllLands(): Promise<any[]> {
+    const allRows = await (await this.db).getAllAsync("SELECT * FROM lands");
+    return allRows;
+  }
+
+  /**
+   * Tek bir araziyi getirir.
+   * @param id - Arazinin ID'si
+   * @returns - Arazi objesi
+   */
+  async getLandById(id: number): Promise<any | null> {
+    const firstRow = await (await this.db).getFirstAsync(
+      "SELECT * FROM lands WHERE id = ?",
+      id
+    );
+    return firstRow;
   }
 
   /**
    * Yeni bir arazi ekler.
-   * @param name - Arazi adı.
-   * @param size - Arazi boyutu.
-   * @param soilType - Arazi toprak türü.
-   * @param callback - İşlem tamamlandığında çağrılan callback.
+   * @param name - Arazi adı
+   * @param size - Arazi boyutu
+   * @param soilType - Arazi toprak türü
+   * @returns - Eklenen arazinin ID'si
    */
-  static addLand(name: string, size: string, soilType: string, callback: () => void) {
-    db.transaction((tx: { executeSql: (arg0: string, arg1: string[], arg2: () => void) => void; }) => {
-      tx.executeSql(
-        `INSERT INTO lands (name, size, soilType) VALUES (?, ?, ?)`,
-        [name, size, soilType],
-        () => callback()
-      );
-    });
+  async addLand(name: string, size: string, soilType: string): Promise<number> {
+    const result = await (await this.db).runAsync(
+      "INSERT INTO lands (name, size, soilType) VALUES (?, ?, ?)",
+      name,
+      size,
+      soilType
+    );
+    return result.lastInsertRowId; // Eklenen satırın ID'sini döner
+  }
+
+  /**
+   * Belirli bir araziyi günceller.
+   * @param id - Güncellenecek arazinin ID'si
+   * @param name - Yeni arazi adı
+   * @param size - Yeni arazi boyutu
+   * @param soilType - Yeni arazi toprak türü
+   * @returns - Güncellenen satır sayısı
+   */
+  async updateLand(
+    id: number,
+    name: string,
+    size: string,
+    soilType: string
+  ): Promise<number> {
+    const result = await (await this.db).runAsync(
+      "UPDATE lands SET name = ?, size = ?, soilType = ? WHERE id = ?",
+      name,
+      size,
+      soilType,
+      id
+    );
+    return result.changes; // Güncellenen satır sayısını döner
   }
 
   /**
    * Belirli bir araziyi siler.
-   * @param id - Silinecek arazinin ID'si.
-   * @param callback - İşlem tamamlandığında çağrılan callback.
+   * @param id - Silinecek arazinin ID'si
+   * @returns - Silinen satır sayısı
    */
-  static deleteLand(id: number, callback: () => void) {
-    db.transaction((tx: { executeSql: (arg0: string, arg1: number[], arg2: () => void) => void; }) => {
-      tx.executeSql(
-        `DELETE FROM lands WHERE id = ?`,
-        [id],
-        () => callback()
-      );
-    });
+  async deleteLand(id: number): Promise<number> {
+    const result = await (await this.db).runAsync(
+      "DELETE FROM lands WHERE id = ?",
+      id
+    );
+    return result.changes; // Silinen satır sayısını döner
   }
 }
 

@@ -1,4 +1,3 @@
-// src/screens/LandListScreen.tsx
 
 import React from 'react';
 import { View, FlatList, Text, Button, StyleSheet } from 'react-native';
